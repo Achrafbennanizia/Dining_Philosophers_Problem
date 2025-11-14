@@ -216,6 +216,3 @@ This project demonstrates:
 * C# docs: `System.Diagnostics.Stopwatch`
 
 ```
-
-If you want, I can also adapt the README to **German**, or tailor it exactly to your Hochschule assignment (with your name, course, date, etc.).
-```
