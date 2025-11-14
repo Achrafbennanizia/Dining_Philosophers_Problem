@@ -1,131 +1,221 @@
-## Dining Philosophers Problem (C#)
+# Dining Philosophers Problem (C# / .NET)
 
-A small .NET console implementation of the classical Dining Philosophers concurrency problem.
+This project is a C# console implementation of the classic **Dining Philosophers Problem**.  
+It simulates five philosophers sitting around a table, sharing five forks, and competing for resources using multiple threads.
 
-This repository contains a minimal, educational simulation of five philosophers who alternately think and eat, sharing forks (locks). It demonstrates thread usage and simple deadlock avoidance strategies.
+The focus is on:
 
----
-
-## Requirements
-
-- .NET 10 SDK (the project targets `net10.0`).
-- Works on macOS, Linux and Windows with the appropriate .NET SDK installed.
-
-If you don't have the SDK installed, get it from https://dotnet.microsoft.com/.
+- **Threading & Synchronization**
+- **Safe access to shared resources (locks)**
+- **Deadlock avoidance**
+- **Measuring total eating time per philosopher**
 
 ---
 
-## Build
+## 🧠 Problem Overview
 
-Open a terminal (zsh on macOS) in the repository root and run:
+Five philosophers sit at a round table.  
+Between each pair of philosophers lies **one fork** (so 5 forks in total).
+
+Each philosopher repeatedly:
+
+1. **Thinks** for a short, random time  
+2. **Gets hungry** and tries to:
+   - take the fork on one side
+   - then the fork on the other side
+3. **Eats** for a short, random time (only if both forks are held)
+4. Puts both forks back and starts **thinking again**
+
+### The concurrency issue (Deadlock)
+
+Wenn alle Philosophen gleichzeitig die linke Gabel nehmen und auf die rechte warten, kann es passieren, dass **kein Philosoph weiterkommt** → ein klassischer **Deadlock**.
+
+In der Implementierung wird daher bewusst eine Strategie zur **Deadlock-Vermeidung** eingesetzt.
+
+---
+
+## 🛠️ Implementation Details
+
+### Technologies
+
+- **Language:** C#
+- **Framework:** .NET (6/7 – works with `dotnet run`)
+- **Threads:** `System.Threading.Thread`
+- **Synchronization:** `Monitor.TryEnter` / `Monitor.Exit`
+- **Timing:** `System.Diagnostics.Stopwatch`
+- **Random delays:** `System.Random`
+- **Statistics:** `Dictionary<int, int>` for total eating time per philosopher
+
+### Core Concepts
+
+- **Philosophers** are modeled as **threads** in a `Thread[]`.
+- **Forks** are modeled as simple `object` instances in an `object[]`.
+- Each philosopher gets:
+  - a **left fork**
+  - a **right fork** (using modulo `%` for the round table)
+- Each thread runs `TryDinner(int philosoph, object fork1, object fork2)` in a loop while the simulation is active.
+
+### Methods
+
+The project implements (or should implement) at least:
+
+```csharp
+public static void Think()
+public static void Eat(int philosoph)
+public static void TryDinner(int philosoph, object fork1, object fork2)
+````
+
+* `Think()`
+  Philosopher sleeps for a random time (e.g. 1–10 ms) to simulate thinking.
+
+* `Eat(int philosoph)`
+  Philosopher eats for a random time (e.g. 1–10 ms).
+  The time is added to `Dictionary<int, int> eatingTime`, where the key is the philosopher’s ID and the value is the **total time spent eating (ms)**.
+
+* `TryDinner(int philosoph, object fork1, object fork2)`
+  The main loop for each philosopher:
+
+  * Think
+  * Try to take first fork via `Monitor.TryEnter`
+  * If successful, try to take second fork
+  * If both are acquired → `Eat(philosoph)`
+  * Always release taken forks in a `finally` block
+
+### Deadlock Avoidance Strategy
+
+To avoid a circular wait and thus a deadlock:
+
+* Philosophers **0–3** take forks in the order: **left → right**
+* The **last philosopher (4)** takes forks in the order: **right → left**
+
+This small change breaks the symmetric cycle of dependencies and prevents a classic deadlock scenario.
+
+---
+
+## 📁 Project Structure
+
+Typical structure (for a simple console app):
+
+```text
+Dining_Philosophers_Problem/
+├── Program.cs
+├── Dining_Philosophers_Problem.csproj
+└── README.md
+```
+
+* `Program.cs` – contains the full implementation (threads, forks, logic)
+* `.csproj` – standard .NET SDK project file
+* `README.md` – this file
+
+---
+
+## ▶️ How to Build & Run
+
+### Prerequisites
+
+* .NET SDK installed
+  You can check with:
 
 ```bash
-dotnet build /Users/achraf/pro/C#_Net/Dining_Philosophers_Problem/Dining_Philosophers_Problem.csproj
+dotnet --version
 ```
 
----
-
-## Run
-
-Run the console application with:
+### Clone the repository
 
 ```bash
-dotnet run --project /Users/achraf/pro/C#_Net/Dining_Philosophers_Problem/Dining_Philosophers_Problem.csproj
+git clone <your-repo-url>.git
+cd Dining_Philosophers_Problem
 ```
 
-The program runs the simulation for 10 seconds and then prints the total eating time per philosopher, for example:
+### Run the simulation
 
+```bash
+dotnet run
 ```
+
+You should see output similar to:
+
+```text
 === Essensdauer pro Philosoph ===
-Philosoph 0: 2787 ms
-Philosoph 1: 2885 ms
-Philosoph 2: 2883 ms
-Philosoph 3: 3225 ms
-Philosoph 4: 2850 ms
+Philosoph 0: 123 ms
+Philosoph 1: 110 ms
+Philosoph 2: 135 ms
+Philosoph 3: 118 ms
+Philosoph 4: 127 ms
 === Programm beendet ===
 ```
 
----
-
-## How the program works (short)
-
-- The program creates N philosophers (default 5).
-- Each philosopher runs on its own thread and loops while a shared `running` flag is true.
-- A philosopher alternates between `Think()` and `Eat()`.
-- There is an object array `forks` representing each fork (lock).
-- To pick up forks, the code uses `Monitor.TryEnter` with a small timeout. If the first fork can't be taken, the philosopher continues thinking; if the second can't be taken within the timeout, they release the first and try again later.
-- To avoid a simple deadlock, the last philosopher acquires the forks in reversed order (right first) so not all philosophers try to take the same sequence.
+(The exact values will vary due to randomness.)
 
 ---
 
-## Implementation details (current code)
+## ⏱️ Timing & Duration
 
-The current `Program.cs` implements the simulation using:
+* Each philosopher:
 
-- `object[] forks` — per-fork locks.
-- `Dictionary<int,int> eatingTime` — keeps accumulated eating time per philosopher.
-- `Random rnd` (single shared instance) used to generate think/eat durations.
-- `Monitor.TryEnter(fork, timeout, ref taken)` — the ref overload which sets `taken` when the lock is acquired.
-- `Thread` array and lambdas to start philosopher threads.
-- The main thread sleeps 10 seconds then flips `running = false` and joins the threads.
-
-The file path: `Program.cs`.
+  * Thinks for **1–10 ms**
+  * Eats for **1–10 ms**
+* The entire simulation runs for about **10 seconds** (configurable via `Thread.Sleep(10000)` or a constant).
+* A `Stopwatch` measures the global runtime, and eating times are accumulated per philosopher.
 
 ---
 
-## Known issues and suggestions
+## ⚙️ Configuration Ideas (Optional)
 
-This project is intentionally simple and educational. The current implementation works for demonstrations but contains some thread-safety issues and places where behavior could be improved. Below are the important ones and suggested fixes:
-
-1. Shared System.Random
-   - Problem: `System.Random` is not thread-safe. Using a single static instance from multiple threads causes race conditions and unpredictable results.
-   - Suggestion: Use `ThreadLocal<Random>` or `System.Random.Shared` (with caution) or better, `System.Security.Cryptography.RandomNumberGenerator` for cryptographically secure randomness if required. Example fix:
+You can easily adapt the simulation by introducing constants at the top of `Program`:
 
 ```csharp
-static ThreadLocal<Random> rnd = new ThreadLocal<Random>(() => new Random());
-// use rnd.Value.Next(...)
+const int NUM_PHILOSOPHERS = 5;
+const int SIMULATION_DURATION_MS = 10_000;
+const int MAX_THINK_MS = 10;
+const int MAX_EAT_MS = 10;
 ```
 
-2. `Dictionary<int,int>` is not thread-safe for concurrent writes
+And then use these instead of magic numbers, e.g.:
 
-   - Problem: Multiple threads update `eatingTime[philosoph] += t;` which is a read-modify-write and not atomic; `Dictionary` is not safe for concurrent writes.
-   - Suggestion: Replace the dictionary with an `int[]` sized to the number of philosophers and update entries using `Interlocked.Add(ref eatingTime[i], t);` or protect updates with a lock.
-
-3. Monitor.TryEnter overload usage and taken flags
-
-   - Problem: The current code uses `Monitor.TryEnter(fork, timeout, ref taken)`. This overload sets `taken` to true if the lock is acquired. That's OK, but be mindful to correctly release only if `taken` is true. Alternatively, use the boolean-returning overload `Monitor.TryEnter(fork, timeout)` which returns true/false.
-
-4. Timeout/backoff tuning
-
-   - The `TryEnter` timeout is currently very small (5 ms). Depending on workload this leads to heavy spinning and CPU usage. Consider using a backoff strategy (short sleep) or increasing the timeout.
-
-5. Optional: Use higher-level concurrency primitives
-
-   - Consider using `SemaphoreSlim`, `Mutex`, or higher-level constructs, or re-architect to avoid explicit locks (channels/actors) if you plan to expand the simulation.
-
-6. Thread capture of loop variable
-   - The original code had a classic closure bug when creating threads inside a loop (the loop variable `i` captured by lambdas). The current file already captures `id = i` before creating the lambda which avoids that bug. Keep that pattern when modifying thread creation logic.
+* Loop `for (int i = 0; i < NUM_PHILOSOPHERS; i++)`
+* `Thread.Sleep(SIMULATION_DURATION_MS);`
+* `Thread.Sleep(rnd.Next(1, MAX_THINK_MS));` etc.
 
 ---
 
-## Suggested small improvements to add (I can implement any of these):
+## 🧪 Possible Extensions
 
-- Replace `Dictionary<int,int>` with `int[]` and use `Interlocked.Add`.
-- Replace shared `Random` with `ThreadLocal<Random>`.
-- Improve locking/backoff strategy and increase TryEnter timeout or add a small sleep when failing to acquire locks.
-- Add command-line options to configure number of philosophers and run duration.
-- Add unit/integration tests for the simulation harness.
+If you want to extend the project further:
+
+* Log every **state change** (Thinking → Hungry → Eating → Finished)
+* Add colors to console output per philosopher
+* Add command-line arguments for:
+
+  * number of philosophers
+  * simulation duration
+  * max think/eat time
+* Implement alternative strategies:
+
+  * with intentional deadlock
+  * with a waiter (central arbiter) pattern
+  * with `SemaphoreSlim` instead of bare `Monitor`
 
 ---
 
-## Contributing
+## 🎯 Learning Goals
 
-Contributions are welcome. Open an issue or a pull request to discuss changes.
+This project demonstrates:
+
+* How to use **threads** in C#
+* Safe **synchronization** with `Monitor`
+* How **deadlocks** can arise and how to **avoid** them with simple strategies
+* How to **measure and aggregate timing** per concurrent unit (per philosopher)
 
 ---
 
-## License
+## 📚 References
 
-This repository uses the MIT license. If you want a different license, update this section accordingly.
+* Classic concurrency problem: **Dining Philosophers (Dijkstra, 1965)**
+* C# docs: `System.Threading.Thread`, `System.Threading.Monitor`
+* C# docs: `System.Diagnostics.Stopwatch`
 
-# Dining_Philosophers_Problem
+```
+
+If you want, I can also adapt the README to **German**, or tailor it exactly to your Hochschule assignment (with your name, course, date, etc.).
+```
