@@ -214,5 +214,3 @@ This project demonstrates:
 * Classic concurrency problem: **Dining Philosophers (Dijkstra, 1965)**
 * C# docs: `System.Threading.Thread`, `System.Threading.Monitor`
 * C# docs: `System.Diagnostics.Stopwatch`
-
-```
