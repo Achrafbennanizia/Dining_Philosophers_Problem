@@ -1,0 +1,56 @@
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# MonoDevelop
+*.pidb
+*.userprefs
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
+.project.lock.json
+project.fragment.lock.json
+
+# Dotnet publish
+publish/
+
+# Logs
+*.log
+
+# Test result files
+TestResults/
+
+# Rider
+*.sln.iml
+
+# Runtime
+*.dll
+*.exe
+*.app
+*.so
+*.dylib
+*.pdb
+
+# Temporary
+*.tmp
+*.temp
+
+# Other
+artifacts/

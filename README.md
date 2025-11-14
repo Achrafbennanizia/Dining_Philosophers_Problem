@@ -87,16 +87,20 @@ static ThreadLocal<Random> rnd = new ThreadLocal<Random>(() => new Random());
 ```
 
 2. `Dictionary<int,int>` is not thread-safe for concurrent writes
+
    - Problem: Multiple threads update `eatingTime[philosoph] += t;` which is a read-modify-write and not atomic; `Dictionary` is not safe for concurrent writes.
    - Suggestion: Replace the dictionary with an `int[]` sized to the number of philosophers and update entries using `Interlocked.Add(ref eatingTime[i], t);` or protect updates with a lock.
 
 3. Monitor.TryEnter overload usage and taken flags
+
    - Problem: The current code uses `Monitor.TryEnter(fork, timeout, ref taken)`. This overload sets `taken` to true if the lock is acquired. That's OK, but be mindful to correctly release only if `taken` is true. Alternatively, use the boolean-returning overload `Monitor.TryEnter(fork, timeout)` which returns true/false.
 
 4. Timeout/backoff tuning
+
    - The `TryEnter` timeout is currently very small (5 ms). Depending on workload this leads to heavy spinning and CPU usage. Consider using a backoff strategy (short sleep) or increasing the timeout.
 
 5. Optional: Use higher-level concurrency primitives
+
    - Consider using `SemaphoreSlim`, `Mutex`, or higher-level constructs, or re-architect to avoid explicit locks (channels/actors) if you plan to expand the simulation.
 
 6. Thread capture of loop variable
@@ -123,4 +127,5 @@ Contributions are welcome. Open an issue or a pull request to discuss changes.
 ## License
 
 This repository uses the MIT license. If you want a different license, update this section accordingly.
+
 # Dining_Philosophers_Problem
